@@ -4,9 +4,39 @@ import java.util.Arrays;
 
 import com.rabbitmq.client.*;
 
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+
 public class HO {
 
+    private static DefaultTableModel tableModel;
+    private static final String[] COLUMN_NAMES = {"ID", "Product", "Qty", "Cost", "Amt", "Tax", "Total", "Date", "Region"};
+
     public static void main(String[] argv) throws Exception {
+
+        // Set up the Swing GUI
+        JFrame frame = new JFrame("Head Office");
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+        JTable table = new JTable();
+        tableModel = new DefaultTableModel(COLUMN_NAMES, 0);
+        table.setModel(tableModel);
+        JScrollPane scrollPane = new JScrollPane(table);
+        panel.add(scrollPane);
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
+        JButton refreshButton = new JButton("Refresh");
+        refreshButton.addActionListener(e -> refreshTable());
+        buttonPanel.add(refreshButton);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        panel.add(buttonPanel);
+
+        frame.add(panel);
+        frame.pack();
+        frame.setVisible(true);
+
 
         // Set up MySQL database connection
         Class.forName("com.mysql.cj.jdbc.Driver");
@@ -96,5 +126,49 @@ public class HO {
             Thread.sleep(1000);
         }*/
     }
+
+
+    private static void refreshTable() {
+        try {
+            // Clear the table
+            tableModel.setRowCount(0);
+
+            // Set up MySQL database connection
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            java.sql.Connection con = DriverManager.getConnection(
+                    "jdbc:mysql://localhost:3306/ho", "root", ""
+            );
+
+            // Retrieve data from MySQL database
+            Statement statement = con.createStatement();
+            ResultSet resultSet = statement.executeQuery("select * from product_sales");
+            while (resultSet.next()) {
+                Object[] rowData = {
+                        resultSet.getInt("id"),
+                        resultSet.getString("product"),
+                        resultSet.getString("qty"),
+                        resultSet.getString("cost"),
+                        resultSet.getString("amt"),
+                        resultSet.getString("tax"),
+                        resultSet.getString("total"),
+                        resultSet.getString("date"),
+                        resultSet.getString("region")
+                };
+                System.out.println(Arrays.toString(rowData));
+                tableModel.addRow(rowData);
+            }
+
+            // Close SQL connection
+            resultSet.close();
+            statement.close();
+            con.close();
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
+
+
+
 }
 
